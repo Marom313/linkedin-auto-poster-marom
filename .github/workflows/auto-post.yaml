@@ -28,7 +28,7 @@ jobs:
           echo "Has LI_ACCESS_TOKEN?    ${{ secrets.LI_ACCESS_TOKEN != '' }}"
           python --version
 
-      # >>> NEW: smoke test Telegram so you see a 'hello' immediately
+      # Smoke test Telegram: you should receive this "hello" within seconds
       - name: Telegram smoke test
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
           curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d chat_id="${TELEGRAM_CHAT_ID}" \
             --data-urlencode text="👋 CI smoke test: hello from GitHub Actions" \
-            | jq '.ok,.description?' || true
+            || true
 
       - name: Run poster
         env:
