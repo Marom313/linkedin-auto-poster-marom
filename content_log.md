@@ -16,3 +16,4 @@
 | 20250910_182400 | Faster APIs with Dio, interceptors, and retries | DRY_RUN_PREVIEW | photo_or_fallback |
 | 20250910_192911 | Crash-free user journeys & observability | DRY_RUN_PREVIEW | photo_or_fallback |
 | 20250910_201907 | Maps, geocoding, and beautiful location UX | DRY_RUN_PREVIEW | photo_or_fallback |
+| 20250910_213304 | CI/CD hygiene and fearless releases | DRY_RUN_PREVIEW | photo_or_fallback |
