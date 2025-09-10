@@ -31,17 +31,3 @@ dry_run:
 
 telegram:
   approval_timeout_minutes: 120
-
-# image sourcing strategy (free)
-images:
-  # order we’ll try: "pexels" (free key) -> "openverse" (no key) -> "procedural" (your current abstract)
-  provider_order: ["pexels", "openverse", "procedural"]
-  # crop target for LinkedIn landscape
-  target_size: [1600, 900]
-
-# turn OFF any paid LLM usage
-ai:
-  text:
-    provider: "none"
-    model: ""
-    max_words: 70

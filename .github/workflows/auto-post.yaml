@@ -26,6 +26,7 @@ jobs:
           echo "Has TELEGRAM_BOT_TOKEN? ${{ secrets.TELEGRAM_BOT_TOKEN != '' }}"
           echo "Has TELEGRAM_CHAT_ID?   ${{ secrets.TELEGRAM_CHAT_ID != '' }}"
           echo "Has LI_ACCESS_TOKEN?    ${{ secrets.LI_ACCESS_TOKEN != '' }}"
+          echo "Has PEXELS_API_KEY?     ${{ secrets.PEXELS_API_KEY != '' }}"
           python --version
 
       # Smoke test Telegram: you should receive this "hello" within seconds
@@ -45,6 +46,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           LI_ACCESS_TOKEN:    ${{ secrets.LI_ACCESS_TOKEN }}
+          PEXELS_API_KEY:     ${{ secrets.PEXELS_API_KEY }}
           FORCE_RUN:          "1"               # run now for testing
         run: python main.py
 
