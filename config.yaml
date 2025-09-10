@@ -42,3 +42,14 @@ style_weights:
   isometric_cubes: 1
   anime_pastel: 1
 
+
+ai:
+  text:
+    provider: "huggingface"
+    model: "HuggingFaceH4/zephyr-7b-beta"
+    max_words: 70
+
+    # (PAID, OFF by default) if you later want OpenAI API:
+    # provider: "openai"
+    # model: "gpt-4o-mini"
+
