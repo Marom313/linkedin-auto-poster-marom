@@ -1,4 +1,6 @@
+@"
 requests==2.32.3
 pillow==10.4.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
+"@ | Out-File -FilePath requirements.txt -Encoding utf8

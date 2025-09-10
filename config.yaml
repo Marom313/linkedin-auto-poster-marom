@@ -1,0 +1,30 @@
+@"
+brand:
+  signature_text: "Marom Gigi • Mobile App Developer"
+  hashtags: ["#Flutter", "#MobileDev", "#IsraelTech", "#SoftwareEngineering", "#AppDevelopment"]
+  palette_choices:
+    - ["#0ea5e9", "#111827"]
+    - ["#22c55e", "#0f172a"]
+    - ["#a78bfa", "#0b1021"]
+    - ["#f59e0b", "#111827"]
+    - ["#ef4444", "#0b1021"]
+topics:
+  - "Building smoother Flutter navigation (GoRouter + DI)"
+  - "Offline-first with Isar/Realm and graceful sync"
+  - "Faster APIs with Dio, interceptors, and retries"
+  - "Maps, geocoding, and beautiful location UX"
+  - "MVVM + Provider + GetIt architecture that scales"
+  - "Polishing performance and frame times"
+  - "Crash-free user journeys & observability"
+  - "CI/CD hygiene and fearless releases"
+style:
+  allow_emojis: true
+  emoji_pool: ["🚀","✨","📱","🧠","🛠️","💡","🔥","🎯","🤝","🌱"]
+post_schedule:
+  days: ["SUN","MON","THU"]
+  local_time: "10:00"
+dry_run:
+  enabled: true
+telegram:
+  approval_timeout_minutes: 120
+"@ | Out-File -FilePath config.yaml -Encoding utf8

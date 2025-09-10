@@ -1,0 +1,35 @@
+@"
+name: linkedin-auto-post
+
+on:
+  schedule:
+    # run every hour; script posts only at 10:00 Asia/Jerusalem on SUN/MON/THU
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Run poster
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          LI_CLIENT_ID:       ${{ secrets.LI_CLIENT_ID }}
+          LI_CLIENT_SECRET:   ${{ secrets.LI_CLIENT_SECRET }}
+          LI_REDIRECT_URI:    ${{ secrets.LI_REDIRECT_URI }}
+          LI_REFRESH_TOKEN:   ${{ secrets.LI_REFRESH_TOKEN }}
+        run: python main.py
+      - name: Commit logs & outputs (if changed)
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add content_log.* out/ || true
+          git commit -m "Update logs" || echo "nothing to commit"
+          git push || echo "no push"
+"@ | Out-File -FilePath .github\workflows\auto-post.yml -Encoding utf8
