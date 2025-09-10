@@ -7,3 +7,4 @@
 | 20250910_163733 | Building smoother Flutter navigation (GoRouter + DI) | DRY_RUN_PREVIEW | blueprint |
 | 20250910_165739 | Maps, geocoding, and beautiful location UX | DRY_RUN_PREVIEW | lineart_grid |
 | 20250910_170118 | Building smoother Flutter navigation (GoRouter + DI) | DRY_RUN_PREVIEW | retro_halftone |
+| 20250910_171533 | Offline-first with Isar/Realm and graceful sync | DRY_RUN_PREVIEW | blueprint |
