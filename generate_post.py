@@ -1,6 +1,5 @@
-import os, random, textwrap, json, csv, datetime, pytz
-from dateutil import tz
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+import os, random, textwrap, json, csv, datetime, pytz, math
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageColor
 import yaml
 
 ROOT = os.path.dirname(__file__)
@@ -8,6 +7,8 @@ OUT = os.path.join(ROOT, "out")
 LOG_CSV = os.path.join(ROOT, "content_log.csv")
 LOG_MD  = os.path.join(ROOT, "content_log.md")
 CONFIG = yaml.safe_load(open(os.path.join(ROOT, "config.yaml"), "r", encoding="utf-8"))
+
+# ----------------------------- helpers ---------------------------------------
 
 def ensure_dirs():
     os.makedirs(OUT, exist_ok=True)
@@ -21,137 +22,292 @@ def rand_emoji():
 def pick_topic():
     return random.choice(CONFIG["topics"])
 
-def make_one_liner(topic):
-    # A simple, sharp template system
-    bits = [
-        f"{rand_emoji()} Shipping something small but meaningful: {topic}.",
-        f"{rand_emoji()} Crafting cleaner edges in {topic}.",
-        f"{rand_emoji()} Today’s focus: {topic} — momentum over perfection.",
-        f"{rand_emoji()} Building, learning, iterating: {topic}.",
-        f"{rand_emoji()} Hands-on with {topic} — always optimizing."
-    ]
-    line = random.choice(bits)
-    sig = CONFIG["brand"]["signature_text"]
-    tags = " ".join(CONFIG["brand"]["hashtags"])
-    return f"{line}\n\n{tags}\n\n{sig}"
-
-def draw_dev_scene(w=1600, h=900, bg1="#0ea5e9", bg2="#111827"):
-    # gradient background
-    img = Image.new("RGBA", (w, h), bg2)
-    overlay = Image.new("RGBA", (w, h))
-    od = ImageDraw.Draw(overlay)
-    for y in range(h):
-        t = y / max(h-1,1)
-        # simple vertical gradient
-        r1,g1,b1 = ImageColor_getrgb(bg1)
-        r2,g2,b2 = ImageColor_getrgb(bg2)
-        r = int(r1*(1-t) + r2*t); g=int(g1*(1-t)+g2*t); b=int(b1*(1-t)+b2*t)
-        od.line([(0,y),(w,y)], fill=(r,g,b,255))
-    img = Image.alpha_composite(img, overlay)
-
-    d = ImageDraw.Draw(img)
-
-    # Futuristic shapes
-    for _ in range(20):
-        x0 = random.randint(-200, w)
-        y0 = random.randint(-200, h)
-        x1 = x0 + random.randint(80, 260)
-        y1 = y0 + random.randint(40, 180)
-        d.ellipse([x0,y0,x1,y1], outline=(255,255,255,30), width=2)
-
-    # "Desk" platform
-    d.rectangle([80, h-240, w-80, h-160], fill=(0,0,0,120))
-    d.rectangle([140, h-340, w-140, h-240], fill=(255,255,255,15), outline=(255,255,255,40), width=3)
-
-    # Monitor
-    mx, my = w//2-260, h-530
-    d.rounded_rectangle([mx, my, mx+520, my+320], radius=18, fill=(15,20,35,210), outline=(255,255,255,50), width=3)
-    # Code lines
-    for i in range(14):
-        cx = mx+30
-        cy = my+30 + i*20
-        lw = random.randint(120, 440)
-        d.rounded_rectangle([cx,cy,cx+lw,cy+10], radius=5, fill=(80,200,255,80))
-
-    # Laptop
-    lx, ly = 240, h-380
-    d.rounded_rectangle([lx, ly, lx+360, ly+220], radius=20, fill=(20,25,40,220), outline=(255,255,255,40), width=2)
-    for i in range(8):
-        cx = lx+24
-        cy = ly+24 + i*20
-        lw = random.randint(80, 300)
-        d.rounded_rectangle([cx,cy,cx+lw,cy+10], radius=5, fill=(120,220,255,70))
-
-    # Simple, friendly avatar
-    ax, ay = w-520, h-460
-    # body
-    d.ellipse([ax+40, ay+120, ax+260, ay+360], fill=(255,255,255,28), outline=(255,255,255,50))
-    # head
-    d.ellipse([ax+90, ay+60, ax+210, ay+180], fill=(255,224,189,255))
-    # hair
-    d.arc([ax+70, ay+40, ax+230, ay+160], 0, 180, fill=(20,20,20,240), width=30)
-    # eyes
-    d.ellipse([ax+120, ay+110, ax+135, ay+125], fill=(20,20,20,255))
-    d.ellipse([ax+165, ay+110, ax+180, ay+125], fill=(20,20,20,255))
-    # smile
-    d.arc([ax+120, ay+120, ax+180, ay+160], 15, 165, fill=(20,20,20,220), width=4)
-    # tablet
-    d.rounded_rectangle([ax-40, ay+220, ax+260, ay+320], radius=14, fill=(255,255,255,18), outline=(255,255,255,40))
-
-    return img.convert("RGB")
-
-def ImageColor_getrgb(c):
-    from PIL import ImageColor
-    return ImageColor.getrgb(c)
-
-def add_signature(img, text):
-    d = ImageDraw.Draw(img)
+def load_font(size, bold=False):
+    path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold \
+        else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
     try:
-        # use a generic font available on ubuntu
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+        return ImageFont.truetype(path, size)
     except:
-        font = ImageFont.load_default()
-    w, h = img.size
-    tw, th = d.textlength(text, font=font), 40
-    pad = 24
-    d.rectangle([w - tw - pad*2, h - th - pad, w - pad, h - pad], fill=(0,0,0,120))
-    d.text((w - tw - pad*1.5, h - th - pad*1.2), text, fill=(255,255,255), font=font)
-    return img
+        return ImageFont.load_default()
+
+def gradient_bg(w, h, c1, c2):
+    base = Image.new("RGB", (w, h), c2)
+    top  = Image.new("RGB", (w, h), c1)
+    mask = Image.new("L", (w, h))
+    md = ImageDraw.Draw(mask)
+    for y in range(h):
+        md.line((0, y, w, y), fill=int(255 * (1 - y / max(1, h-1))))
+    return Image.composite(top, base, mask)
+
+def text_wrap(draw: ImageDraw.ImageDraw, text, font, max_width):
+    lines, words = [], text.split()
+    buf = []
+    for w in words:
+        trial = " ".join(buf+[w])
+        if draw.textlength(trial, font=font) <= max_width:
+            buf.append(w)
+        else:
+            if buf: lines.append(" ".join(buf))
+            buf = [w]
+    if buf: lines.append(" ".join(buf))
+    return lines
+
+# ----------------------------- copy ------------------------------------------
+
+def build_copy(topic: str) -> str:
+    hooks = [
+        f"{rand_emoji()} Today’s focus: {topic}.",
+        f"{rand_emoji()} Building in public: {topic}.",
+        f"{rand_emoji()} Shipping progress on {topic}.",
+        f"{rand_emoji()} Leveling up: {topic}.",
+    ]
+    value_lines = [
+        "Small, consistent improvements > big, rare releases.",
+        "Momentum over perfection. Iterate, measure, refine.",
+        "Clean architecture, smooth UX, and real-world speed.",
+        "From idea → prototype → polish — fast feedback loops.",
+    ]
+    hook = random.choice(hooks)
+    value = random.choice(value_lines)
+    tags = " ".join(CONFIG["brand"]["hashtags"])
+    sig  = CONFIG["brand"]["signature_text"]
+    return f"{hook}\n{value}\n\n{tags}\n\n{sig}"
+
+# ----------------------------- style atoms -----------------------------------
+
+def draw_card(canvas, title, sub, signature):
+    w, h = canvas.size
+    card = Image.new("RGBA", (w-220, h-280), (255,255,255,238))
+    shadow = Image.new("RGBA", (card.size[0]+40, card.size[1]+40), (0,0,0,0))
+    sd = ImageDraw.Draw(shadow)
+    sd.rounded_rectangle([0,0,shadow.size[0]-1,shadow.size[1]-1], radius=28, fill=(0,0,0,85))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(16))
+    canvas.alpha_composite(shadow, (110-16,110-16))
+    cd = ImageDraw.Draw(card)
+    cd.rounded_rectangle([0,0,card.size[0]-1,card.size[1]-1], radius=28, fill=(255,255,255,245))
+    # header text
+    title_font = load_font(56, bold=True)
+    sub_font   = load_font(34)
+    wrap = text_wrap(cd, title, title_font, card.size[0]-80)
+    y = 44
+    for line in wrap:
+        cd.text((40,y), line, fill=(22,27,34), font=title_font)
+        y += 62
+    cd.text((40,y+6), sub, fill=(70,84,98), font=sub_font)
+    # signature
+    sig_font = load_font(28)
+    tw = cd.textlength(signature, font=sig_font)
+    cd.text((card.size[0]-tw-40, card.size[1]-52), signature, fill=(60,72,88), font=sig_font)
+    return card
+
+def avatar_badge(card, x, y, r=46):
+    d = ImageDraw.Draw(card)
+    d.ellipse([x-r, y-r, x+r, y+r], fill=(255,255,255,235))
+    d.ellipse([x-r+10, y-r+10, x+r-10, y+r-10], fill=(245,208,170,255))
+    d.arc([x-20, y-5, x+20, y+25], 15, 165, fill=(40,40,40,255), width=3)
+    d.ellipse([x-12, y-5, x-4, y+3], fill=(40,40,40,255))
+    d.ellipse([x+4,  y-5, x+12, y+3], fill=(40,40,40,255))
+
+# ----------------------------- distinct styles --------------------------------
+# All return a finished RGB image.
+
+def style_cartoon_card(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    # doodles
+    for _ in range(14):
+        x0 = random.randint(-100, w)
+        y0 = random.randint(-60, h)
+        x1 = x0 + random.randint(60, 180)
+        y1 = y0 + random.randint(30, 120)
+        d.rounded_rectangle([x0,y0,x1,y1], radius=18, outline=(255,255,255,30), width=2)
+    card = draw_card(bg, topic, "Building, learning, iterating — every week.", CONFIG["brand"]["signature_text"])
+    avatar_badge(card, card.size[0]-120, 120)
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_futuristic_glow(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    for _ in range(12):
+        cx, cy = random.randint(0,w), random.randint(0,h)
+        r = random.randint(70, 220)
+        d.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(255,255,255,28), width=2)
+    # glow bloom
+    blur = bg.filter(ImageFilter.GaussianBlur(6))
+    bg = Image.alpha_composite(blur, bg)
+    card = draw_card(bg, topic, "Clean architecture and real-world speed.", CONFIG["brand"]["signature_text"])
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_lineart_grid(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    step = 32
+    for x in range(0, w, step):
+        d.line([(x,0),(x,h)], fill=(255,255,255,28), width=1)
+    for y in range(0, h, step):
+        d.line([(0,y),(w,y)], fill=(255,255,255,18), width=1)
+    card = draw_card(bg, topic, "Fast feedback loops from idea to polish.", CONFIG["brand"]["signature_text"])
+    avatar_badge(card, card.size[0]-120, 120)
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_blueprint(topic, palette):
+    w, h = 1600, 900
+    blue = "#0a4aa3"
+    bg = Image.new("RGB", (w,h), blue).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    # blueprint grid
+    for x in range(0, w, 40):
+        d.line([(x,0),(x,h)], fill=(255,255,255,35))
+    for y in range(0, h, 40):
+        d.line([(0,y),(w,y)], fill=(255,255,255,35))
+    # white framing
+    d.rectangle([20,20,w-20,h-20], outline=(255,255,255,170), width=4)
+    # card
+    card = draw_card(bg, topic, "Blueprinting great mobile experiences.", CONFIG["brand"]["signature_text"])
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_retro_halftone(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
+    # halftone dots
+    dots = Image.new("RGBA", (w,h), (0,0,0,0))
+    dd = ImageDraw.Draw(dots)
+    step = 24
+    for y in range(0,h,step):
+        for x in range(0,w,step):
+            r = int(4 + 3*math.sin(x*0.015) * math.cos(y*0.02))
+            dd.ellipse([x-r,y-r,x+r,y+r], fill=(0,0,0,20))
+    bg.alpha_composite(dots)
+    card = draw_card(bg, topic, "Retro vibes, modern performance.", CONFIG["brand"]["signature_text"])
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_neon_wave(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], "#0b1021").convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    # sine waves
+    for k in range(8):
+        a = random.uniform(20, 90)
+        f = random.uniform(0.008, 0.02)
+        y0 = random.randint(0, h)
+        path = []
+        for x in range(0, w, 8):
+            y = int(y0 + a * math.sin(f*x + k))
+            path.append((x,y))
+        d.line(path, fill=(255,255,255,40), width=3)
+    card = draw_card(bg, topic, "Neon clarity for complex problems.", CONFIG["brand"]["signature_text"])
+    avatar_badge(card, card.size[0]-120, 120)
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_isometric_cubes(topic, palette):
+    w, h = 1600, 900
+    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    # iso cubes
+    for _ in range(60):
+        cx, cy = random.randint(-80,w+80), random.randint(-80,h+80)
+        size = random.randint(14, 32)
+        # top
+        top = [(cx,cy-size),(cx+size,cy),(cx,cy+size),(cx-size,cy)]
+        d.polygon(top, outline=(255,255,255,40))
+    card = draw_card(bg, topic, "Systems that scale without the bloat.", CONFIG["brand"]["signature_text"])
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+def style_anime_pastel(topic, palette):
+    w, h = 1600, 900
+    pastel = ["#ffd6e7","#d6f0ff","#e6ffd6","#fff1cc","#e6e0ff"]
+    c1, c2 = random.choice(pastel), random.choice(pastel)
+    bg = gradient_bg(w, h, c1, c2).convert("RGBA")
+    d = ImageDraw.Draw(bg)
+    # soft blobs
+    for _ in range(12):
+        rx, ry = random.randint(80, 260), random.randint(60, 180)
+        x, y = random.randint(-100,w), random.randint(-80,h)
+        blob = Image.new("RGBA", (rx*2, ry*2), (0,0,0,0))
+        bd = ImageDraw.Draw(blob)
+        bd.ellipse([0,0,rx*2,ry*2], fill=(255,255,255,80))
+        blob = blob.filter(ImageFilter.GaussianBlur(18))
+        bg.alpha_composite(blob, (x-rx, y-ry))
+    # big badge
+    badge = Image.new("RGBA", (280,280), (255,255,255,220))
+    bd = ImageDraw.Draw(badge)
+    bd.ellipse([0,0,279,279], fill=(255,255,255,220))
+    bd.ellipse([20,20,259,259], fill=(245,208,170,255))
+    bd.arc([80,120,200,220], 15, 165, fill=(40,40,40,255), width=5)
+    bg.alpha_composite(badge, (w-360, 120))
+    # card
+    card = draw_card(bg, topic, "Soft look, sharp craft.", CONFIG["brand"]["signature_text"])
+    bg.alpha_composite(card, (110,110))
+    return bg.convert("RGB")
+
+STYLE_VARIANTS = {
+    "cartoon_card":     style_cartoon_card,
+    "futuristic_glow":  style_futuristic_glow,
+    "lineart_grid":     style_lineart_grid,
+    "blueprint":        style_blueprint,
+    "retro_halftone":   style_retro_halftone,
+    "neon_wave":        style_neon_wave,
+    "isometric_cubes":  style_isometric_cubes,
+    "anime_pastel":     style_anime_pastel,
+}
+
+# ----------------------------- pipeline ---------------------------------------
 
 def build():
     ensure_dirs()
     topic = pick_topic()
-    line = make_one_liner(topic)
-    bg1, bg2 = pick_palette()
-    img = draw_dev_scene(bg1=bg1, bg2=bg2)
-    img = add_signature(img, CONFIG["brand"]["signature_text"])
+    line  = build_copy(topic)
+    palette = pick_palette()
 
-    # file naming
+    # Optional weighting from config (otherwise uniform random):
+    weights = CONFIG.get("style_weights")
+    names   = list(STYLE_VARIANTS.keys())
+    if weights:
+        # weights: {style_name: weight_number}
+        wts = [max(0.0, float(weights.get(n, 1.0))) for n in names]
+        total = sum(wts) or 1.0
+        probs = [w/total for w in wts]
+        style_name = random.choices(names, probs, k=1)[0]
+    else:
+        style_name = random.choice(names)
+
+    img = STYLE_VARIANTS[style_name](topic, palette)
+
     now = datetime.datetime.now(pytz.timezone("Asia/Jerusalem"))
     stamp = now.strftime("%Y%m%d_%H%M%S")
     img_path = os.path.join(OUT, f"post_{stamp}.jpg")
     txt_path = os.path.join(OUT, f"post_{stamp}.txt")
 
-    img.save(img_path, quality=92)
+    img.save(img_path, quality=95, subsampling=0)
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(line)
 
-    # return metadata
-    return {"image": img_path, "text": line, "topic": topic, "stamp": stamp}
+    return {"image": img_path, "text": line, "topic": topic, "style": style_name, "stamp": stamp}
 
 def append_logs(meta, status="PREVIEW"):
     exists = os.path.exists(LOG_CSV)
     with open(LOG_CSV, "a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if not exists:
-            w.writerow(["timestamp","topic","status","image","text"])
-        w.writerow([meta["stamp"], meta["topic"], status, os.path.basename(meta["image"]), meta["text"]])
+            w.writerow(["timestamp","topic","status","style","image","text"])
+        w.writerow([meta["stamp"], meta["topic"], status, meta.get("style","-"), os.path.basename(meta["image"]), meta["text"]])
+
     if not os.path.exists(LOG_MD):
         with open(LOG_MD,"w",encoding="utf-8") as f:
             f.write("# Content Log\n\n")
-            f.write("| Timestamp | Topic | Status |\n|---|---|---|\n")
+            f.write("| Timestamp | Topic | Status | Style |\n|---|---|---|---|\n")
     with open(LOG_MD,"a",encoding="utf-8") as f:
-        f.write(f"| {meta['stamp']} | {meta['topic']} | {status} |\n")
+        f.write(f"| {meta['stamp']} | {meta['topic']} | {status} | {meta.get('style','-')} |\n")
 
 if __name__ == "__main__":
     meta = build()

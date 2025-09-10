@@ -31,3 +31,14 @@ dry_run:
 
 telegram:
   approval_timeout_minutes: 120
+
+style_weights:
+  cartoon_card: 1
+  futuristic_glow: 1
+  lineart_grid: 1
+  blueprint: 1
+  retro_halftone: 1
+  neon_wave: 1
+  isometric_cubes: 1
+  anime_pastel: 1
+
