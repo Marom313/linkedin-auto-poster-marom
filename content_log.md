@@ -11,3 +11,4 @@
 | 20250910_171843 | MVVM + Provider + GetIt architecture that scales | DRY_RUN_PREVIEW | blueprint |
 | 20250910_172135 | Offline-first with Isar/Realm and graceful sync | DRY_RUN_PREVIEW | blueprint |
 | 20250910_172957 | Building smoother Flutter navigation (GoRouter + DI) | DRY_RUN_PREVIEW | grid |
+| 20250910_175158 | Crash-free user journeys & observability | DRY_RUN_PREVIEW | procedural |
