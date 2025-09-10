@@ -1,30 +1,46 @@
-@"
 name: linkedin-auto-post
 
 on:
   schedule:
-    # run every hour; script posts only at 10:00 Asia/Jerusalem on SUN/MON/THU
+    # Run hourly; the script itself only posts at 10:00 IL on Sun/Mon/Thu
     - cron: "0 * * * *"
   workflow_dispatch: {}
+
+# Needed so the workflow can push logs (content_log.*) back to the repo
+permissions:
+  contents: write
 
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - run: pip install -r requirements.txt
+
       - name: Run poster
         env:
+          # Telegram (approval channel)
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          # LinkedIn – we’re using a direct Access Token for now
+          LI_ACCESS_TOKEN:    ${{ secrets.LI_ACCESS_TOKEN }}
+
+          # Optional (not required when LI_ACCESS_TOKEN is present)
           LI_CLIENT_ID:       ${{ secrets.LI_CLIENT_ID }}
           LI_CLIENT_SECRET:   ${{ secrets.LI_CLIENT_SECRET }}
           LI_REDIRECT_URI:    ${{ secrets.LI_REDIRECT_URI }}
           LI_REFRESH_TOKEN:   ${{ secrets.LI_REFRESH_TOKEN }}
+
+          # Force a run now (ignores 10:00 scheduling for testing)
+          FORCE_RUN: "1"
         run: python main.py
+
       - name: Commit logs & outputs (if changed)
         run: |
           git config user.name "bot"
@@ -32,4 +48,3 @@ jobs:
           git add content_log.* out/ || true
           git commit -m "Update logs" || echo "nothing to commit"
           git push || echo "no push"
-"@ | Out-File -FilePath .github\workflows\auto-post.yml -Encoding utf8
