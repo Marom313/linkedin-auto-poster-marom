@@ -1,6 +1,9 @@
 import os, random, json, csv, datetime, pytz, math
-from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageColor
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import yaml
+
+# NEW: stock photos (Pexels/Openverse) with free fallbacks
+from stock_images import try_pexels, try_openverse
 
 ROOT = os.path.dirname(__file__)
 OUT = os.path.join(ROOT, "out")
@@ -61,22 +64,14 @@ def persona_caption(topic: str) -> str:
     humor   = int(p.get("humor", 1))
     depth   = int(p.get("depth", 2))
 
-    # Micro tone bits
-    humor_openers = [
-        "",  # straight
-        f"{rand_emoji()} Tiny win:",  # light wink
-        f"{rand_emoji()} Quick flex:",  # more playful, still tasteful
-    ]
-
+    humor_openers = ["", f"{rand_emoji()} Tiny win:", f"{rand_emoji()} Quick flex:"]
     opener = humor_openers[min(max(humor,0),2)]
 
-    # Depth affects how concrete we go
     if depth == 1:
         value = "Momentum over perfection."
     elif depth == 2:
         value = "Clean architecture, smooth UX, real-world speed."
     else:
-        # brief technical slice
         technical = random.choice([
             "guarded routes + DI keep screens honest",
             "interceptors add resilience and observability",
@@ -86,26 +81,34 @@ def persona_caption(topic: str) -> str:
         ])
         value = f"{technical.capitalize()}."
 
-    # Anchor: sprinkle a believable specialty
     anchor = random.choice(anchors) if anchors else ""
-    trait = random.choice(traits) if traits else ""
+    trait  = random.choice(traits) if traits else ""
 
-    hook_core = f"{opener} Building in public: {topic}".strip()
-    second = f"{value}"
-    third  = f"{trait.capitalize()}" if trait else ""
-    fourth = f"Focus lately: {anchor}." if anchor else ""
-
-    # Stitch → 2–3 tight lines
-    lines = [hook_core, second]
-    if depth >= 2 and third:  lines.append(third)
-    if depth >= 3 and fourth: lines.append(fourth)
+    lines = [f"{opener} Building in public: {topic}".strip(), value]
+    if depth >= 2 and trait:   lines.append(trait.capitalize())
+    if depth >= 3 and anchor:  lines.append(f"Focus lately: {anchor}.")
 
     body = "\n".join([ln for ln in lines if ln])
     tags = " ".join(CONFIG["brand"]["hashtags"])
     sig  = CONFIG["brand"]["signature_text"]
     return f"{body}\n\n{tags}\n\n{sig}"
 
-# ----------------------------- visuals (FREE) ---------------------------------
+# ----------------------------- signature overlay -----------------------------
+
+def add_signature_only(img: Image.Image, signature: str) -> Image.Image:
+    """Put only a small signature in bottom-right of a photo or canvas."""
+    d = ImageDraw.Draw(img)
+    font = load_font(28)
+    pad = 24
+    tw = d.textlength(signature, font=font)
+    th = 34
+    w, h = img.size
+    # soft plate behind text for contrast
+    d.rectangle([w - tw - pad*2, h - th - pad, w - pad, h - pad], fill=(0,0,0,120))
+    d.text((w - tw - pad*1.5, h - th - pad*1.2), signature, fill=(255,255,255), font=font)
+    return img
+
+# ----------------------------- procedural visuals (fallback) ------------------
 
 def draw_card(canvas, title, sub, signature):
     w, h = canvas.size
@@ -140,7 +143,6 @@ def avatar_badge(card, x, y, r=46):
     d.ellipse([x-12, y-5, x-4, y+3], fill=(40,40,40,255))
     d.ellipse([x+4,  y-5, x+12, y+3], fill=(40,40,40,255))
 
-# 8 varied free styles (no text baked into background other than signature)
 def style_cartoon_card(topic, palette):
     w, h = 1600, 900
     bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
@@ -247,12 +249,7 @@ def style_anime_pastel(topic, palette):
         bd.ellipse([0,0,rx*2,ry*2], fill=(255,255,255,80))
         blob = blob.filter(ImageFilter.GaussianBlur(18))
         bg.alpha_composite(blob, (x-rx, y-ry))
-    badge = Image.new("RGBA", (280,280), (255,255,255,220))
-    bd = ImageDraw.Draw(badge)
-    bd.ellipse([0,0,279,279], fill=(255,255,255,220))
-    bd.ellipse([20,20,259,259], fill=(245,208,170,255))
-    bd.arc([80,120,200,220], 15, 165, fill=(40,40,40,255), width=5)
-    bg.alpha_composite(badge, (w-360, 120))
+    # badge + card, still no text in the photo area other than signature
     card = draw_card(bg, topic, "Soft look, sharp craft.", CONFIG["brand"]["signature_text"])
     bg.alpha_composite(card, (110,110))
     return bg.convert("RGB")
@@ -279,19 +276,33 @@ def build():
     ensure_dirs()
     topic = pick_topic()
     text  = persona_caption(topic)  # persona-guided copy (free)
-    palette = pick_palette()
-    img, style_name = build_image(topic, palette)
 
+    # file naming early (so stock fetchers can write directly)
     now = datetime.datetime.now(pytz.timezone("Asia/Jerusalem"))
     stamp = now.strftime("%Y%m%d_%H%M%S")
     img_path = os.path.join(OUT, f"post_{stamp}.jpg")
     txt_path = os.path.join(OUT, f"post_{stamp}.txt")
 
-    img.save(img_path, quality=95, subsampling=0)
+    # 1) Try stock photos (Pexels → Openverse)
+    got_stock = try_pexels(topic, img_path) or try_openverse(topic, img_path)
+    style_name = "stock:pexels" if got_stock else ""
+
+    if got_stock:
+        # open, add small signature, save
+        img = Image.open(img_path).convert("RGB")
+        img = add_signature_only(img, CONFIG["brand"]["signature_text"])
+        img.save(img_path, quality=95, subsampling=0)
+    else:
+        # 2) Fallback to procedural visual
+        palette = pick_palette()
+        img, style_name = build_image(topic, palette)
+        img = add_signature_only(img, CONFIG["brand"]["signature_text"])
+        img.save(img_path, quality=95, subsampling=0)
+
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(text)
 
-    return {"image": img_path, "text": text, "topic": topic, "style": style_name, "stamp": stamp}
+    return {"image": img_path, "text": text, "topic": topic, "style": style_name or "procedural", "stamp": stamp}
 
 def append_logs(meta, status="PREVIEW"):
     exists = os.path.exists(LOG_CSV)
