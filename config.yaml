@@ -28,7 +28,7 @@ post_schedule:
   local_time: "10:00"
 
 dry_run:
-  enabled: true
+  enabled: false
 
 telegram:
   approval_timeout_minutes: 120
