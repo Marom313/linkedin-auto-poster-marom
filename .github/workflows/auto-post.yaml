@@ -2,11 +2,9 @@ name: linkedin-auto-post
 
 on:
   schedule:
-    # Run hourly; the script itself only posts at 10:00 IL on Sun/Mon/Thu
-    - cron: "0 * * * *"
+    - cron: "0 * * * *"   # hourly; script itself sticks to 10:00 IL on Sun/Mon/Thu
   workflow_dispatch: {}
 
-# Needed so the workflow can push logs (content_log.*) back to the repo
 permissions:
   contents: write
 
@@ -20,25 +18,22 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install -r requirements.txt
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Print debug env (masked)
+        run: |
+          echo "Has TELEGRAM_BOT_TOKEN? ${{ secrets.TELEGRAM_BOT_TOKEN != '' }}"
+          echo "Has TELEGRAM_CHAT_ID? ${{ secrets.TELEGRAM_CHAT_ID != '' }}"
+          echo "Has LI_ACCESS_TOKEN? ${{ secrets.LI_ACCESS_TOKEN != '' }}"
+          python --version
 
       - name: Run poster
         env:
-          # Telegram (approval channel)
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-
-          # LinkedIn – we’re using a direct Access Token for now
           LI_ACCESS_TOKEN:    ${{ secrets.LI_ACCESS_TOKEN }}
-
-          # Optional (not required when LI_ACCESS_TOKEN is present)
-          LI_CLIENT_ID:       ${{ secrets.LI_CLIENT_ID }}
-          LI_CLIENT_SECRET:   ${{ secrets.LI_CLIENT_SECRET }}
-          LI_REDIRECT_URI:    ${{ secrets.LI_REDIRECT_URI }}
-          LI_REFRESH_TOKEN:   ${{ secrets.LI_REFRESH_TOKEN }}
-
-          # Force a run now (ignores 10:00 scheduling for testing)
-          FORCE_RUN: "1"
+          FORCE_RUN:          "1"               # run now for testing
         run: python main.py
 
       - name: Commit logs & outputs (if changed)
