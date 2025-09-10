@@ -9,3 +9,4 @@
 | 20250910_170118 | Building smoother Flutter navigation (GoRouter + DI) | DRY_RUN_PREVIEW | retro_halftone |
 | 20250910_171533 | Offline-first with Isar/Realm and graceful sync | DRY_RUN_PREVIEW | blueprint |
 | 20250910_171843 | MVVM + Provider + GetIt architecture that scales | DRY_RUN_PREVIEW | blueprint |
+| 20250910_172135 | Offline-first with Isar/Realm and graceful sync | DRY_RUN_PREVIEW | blueprint |
