@@ -1,0 +1,6 @@
+Leveling up: MVVM + Provider + GetIt architecture that scales.
+Idea → prototype → polish — fast feedback loops.
+
+#Flutter #MobileDev #IsraelTech #SoftwareEngineering #AppDevelopment
+
+Marom Gigi • Mobile App Developer
