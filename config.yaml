@@ -32,24 +32,16 @@ dry_run:
 telegram:
   approval_timeout_minutes: 120
 
-style_weights:
-  cartoon_card: 1
-  futuristic_glow: 1
-  lineart_grid: 1
-  blueprint: 1
-  retro_halftone: 1
-  neon_wave: 1
-  isometric_cubes: 1
-  anime_pastel: 1
+# image sourcing strategy (free)
+images:
+  # order we’ll try: "pexels" (free key) -> "openverse" (no key) -> "procedural" (your current abstract)
+  provider_order: ["pexels", "openverse", "procedural"]
+  # crop target for LinkedIn landscape
+  target_size: [1600, 900]
 
-
+# turn OFF any paid LLM usage
 ai:
   text:
-    provider: "huggingface"
-    model: "HuggingFaceH4/zephyr-7b-beta"
+    provider: "none"
+    model: ""
     max_words: 70
-
-    # (PAID, OFF by default) if you later want OpenAI API:
-    # provider: "openai"
-    # model: "gpt-4o-mini"
-

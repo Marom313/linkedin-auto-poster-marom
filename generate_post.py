@@ -1,16 +1,16 @@
 # generate_post.py
 import os, random, json, csv, datetime, pytz, math
-from PIL import Image, ImageDraw, ImageFilter, ImageColor, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import yaml
-import overlays  # NEW
+
+import stock_images  # NEW: online stock sources (free)
+import overlays      # your vector overlays for fallback/procedural styles
 
 ROOT = os.path.dirname(__file__)
 OUT = os.path.join(ROOT, "out")
 LOG_CSV = os.path.join(ROOT, "content_log.csv")
 LOG_MD  = os.path.join(ROOT, "content_log.md")
 CONFIG = yaml.safe_load(open(os.path.join(ROOT, "config.yaml"), "r", encoding="utf-8"))
-
-# ---------------- helpers ----------------
 
 def ensure_dirs():
     os.makedirs(OUT, exist_ok=True)
@@ -36,14 +36,13 @@ def gradient_bg(w, h, c1, c2):
         md.line((0, y, w, y), fill=int(255 * (1 - y / max(1, h-1))))
     return Image.composite(top, base, mask)
 
-# ------------- caption (kept smart but free) -------------
-
+# ------- caption (free, concise) -------
 def build_caption(topic: str) -> str:
     hooks = [
+        f"Building in public: {topic}.",
         f"Today’s focus: {topic}.",
         f"Leveling up: {topic}.",
         f"Shipping progress on {topic}.",
-        f"Building in public: {topic}.",
     ]
     principles = [
         "Idea → prototype → polish — fast feedback loops.",
@@ -56,9 +55,8 @@ def build_caption(topic: str) -> str:
     sig  = CONFIG["brand"]["signature_text"]
     return f"{text}\n\n{tags}\n\n{sig}"
 
-# ------------- styles (no text inside image) -------------
-
-def _signature_chip(img, text):
+# ------- signature chip only (no text headline) -------
+def signature_chip(img, text):
     d = ImageDraw.Draw(img, "RGBA")
     w, h = img.size
     chip = Image.new("RGBA", (560, 64), (0,0,0,0))
@@ -69,6 +67,7 @@ def _signature_chip(img, text):
     cd.text((560-20-tw, 18), text, fill=(255,255,255,235), font=font)
     img.alpha_composite(chip, (w-560-28, h-64-28))
 
+# ------- procedural fallback styles (no text) -------
 def style_blueprint(palette):
     w, h = 1600, 900
     blue = "#0a4aa3"
@@ -96,67 +95,83 @@ def style_neon(palette):
         d.line(pts, fill=(255,255,255,40), width=3)
     return bg
 
-def style_glow(palette):
-    w, h = 1600, 900
-    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
-    d = ImageDraw.Draw(bg)
-    for _ in range(10):
-        cx, cy = random.randint(0,w), random.randint(0,h)
-        r = random.randint(80, 220)
-        d.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(255,255,255,28), width=2)
-    bg = Image.alpha_composite(bg.filter(ImageFilter.GaussianBlur(6)), bg)
-    return bg
-
-def style_grid(palette):
-    w, h = 1600, 900
-    bg = gradient_bg(w, h, palette[0], palette[1]).convert("RGBA")
-    d = ImageDraw.Draw(bg)
-    step = 32
-    for x in range(0, w, step):
-        d.line([(x,0),(x,h)], fill=(255,255,255,28), width=1)
-    for y in range(0, h, step):
-        d.line([(0,y),(w,y)], fill=(255,255,255,18), width=1)
-    return bg
-
 STYLE_FNS = {
     "blueprint": style_blueprint,
     "neon":      style_neon,
-    "glow":      style_glow,
-    "grid":      style_grid,
 }
 
-def build_image(topic, palette):
-    style_name = random.choices(
-        population=list(STYLE_FNS.keys()),
-        weights=[3,3,2,2],  # tweak if you like
-        k=1
-    )[0]
+def _procedural_image(palette):
+    style_name = random.choice(list(STYLE_FNS.keys()))
     img = STYLE_FNS[style_name](palette)
-    # NEW: add overlays (phone, crane, gears, wrench, dotted guides)
-    overlays.apply_overlays(img, palette)
-    # tiny signature chip only (no text headlines)
-    _signature_chip(img, CONFIG["brand"]["signature_text"])
+    overlays.apply_overlays(img, palette)     # gears/phone/crane guides
+    signature_chip(img, CONFIG["brand"]["signature_text"])
     return img.convert("RGB"), style_name
 
-# ------------- pipeline -------------
+# ------- stock-photo pipeline (free) -------
+def _try_stock(topic: str, stamp: str) -> str | None:
+    target = tuple(CONFIG.get("images", {}).get("target_size", [1600, 900]))
+    raw_path = os.path.join(OUT, f"stock_{stamp}.jpg")
 
+    # 1) Pexels (requires free key in secret PEXELS_API_KEY)
+    if "pexels" in CONFIG.get("images", {}).get("provider_order", []):
+        try:
+            if stock_images.try_pexels(topic, raw_path, target_size=target):
+                return raw_path
+        except Exception:
+            pass
+
+    # 2) Openverse (no key)
+    if "openverse" in CONFIG.get("images", {}).get("provider_order", []):
+        try:
+            if stock_images.try_openverse(topic, raw_path, target_size=target):
+                return raw_path
+        except Exception:
+            pass
+
+    return None
+
+# ------- build ---------------------------------------------------------------
 def build():
     ensure_dirs()
-    topic   = pick_topic()
-    caption = build_caption(topic)
-    palette = pick_palette()
-    img, style_name = build_image(topic, palette)
+    topic    = pick_topic()
+    caption  = build_caption(topic)
+    palette  = pick_palette()
 
-    now = datetime.datetime.now(pytz.timezone("Asia/Jerusalem"))
+    now   = datetime.datetime.now(pytz.timezone("Asia/Jerusalem"))
     stamp = now.strftime("%Y%m%d_%H%M%S")
     img_path = os.path.join(OUT, f"post_{stamp}.jpg")
     txt_path = os.path.join(OUT, f"post_{stamp}.txt")
 
-    img.save(img_path, quality=95, subsampling=0)
+    # Try stock image (Pexels→Openverse), else procedural fallback
+    source = "procedural"
+    stock_file = _try_stock(topic, stamp)
+    if stock_file and os.path.exists(stock_file):
+        source = "stock"
+        im = Image.open(stock_file).convert("RGBA")
+        # subtle vignette for polish (no text)
+        overlay = Image.new("RGBA", im.size, (0,0,0,0))
+        d = ImageDraw.Draw(overlay)
+        w, h = im.size
+        for r in range(20):
+            a = int(120 * (r/19))
+            d.rectangle([r*3, r*3, w-r*3, h-r*3], outline=(0,0,0,a), width=3)
+        im = Image.alpha_composite(im, overlay)
+        signature_chip(im, CONFIG["brand"]["signature_text"])
+        im.convert("RGB").save(img_path, quality=95, subsampling=0)
+    else:
+        im, style_name = _procedural_image(palette)
+        im.save(img_path, quality=95, subsampling=0)
+
     with open(txt_path, "w", encoding="utf-8") as f:
         f.write(caption)
 
-    return {"image": img_path, "text": caption, "topic": topic, "style": style_name, "stamp": stamp}
+    return {
+        "image": img_path,
+        "text": caption,
+        "topic": topic,
+        "style": source,
+        "stamp": stamp,
+    }
 
 def append_logs(meta, status="PREVIEW"):
     exists = os.path.exists(LOG_CSV)
