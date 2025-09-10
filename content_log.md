@@ -18,3 +18,4 @@
 | 20250910_201907 | Maps, geocoding, and beautiful location UX | DRY_RUN_PREVIEW | photo_or_fallback |
 | 20250910_213304 | CI/CD hygiene and fearless releases | DRY_RUN_PREVIEW | photo_or_fallback |
 | 20250910_223916 | Polishing performance and frame times | SKIPPED | stock:pexels |
+| 20250910_223959 | Crash-free user journeys & observability | NO_APPROVAL | stock:pexels |
