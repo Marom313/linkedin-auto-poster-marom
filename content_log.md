@@ -27,3 +27,4 @@
 | 20250911_154626 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
 | 20250911_182151 | MVVM + Provider + GetIt architecture that scales | NO_APPROVAL | stock:pexels |
 | 20250911_212917 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
+| 20250912_001918 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
