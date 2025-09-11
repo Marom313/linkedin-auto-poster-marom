@@ -20,3 +20,4 @@
 | 20250910_223916 | Polishing performance and frame times | SKIPPED | stock:pexels |
 | 20250910_223959 | Crash-free user journeys & observability | NO_APPROVAL | stock:pexels |
 | 20250911_012112 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
+| 20250911_044916 | Maps, geocoding, and beautiful location UX | NO_APPROVAL | stock:pexels |
