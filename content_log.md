@@ -26,3 +26,4 @@
 | 20250911_122358 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
 | 20250911_154626 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
 | 20250911_182151 | MVVM + Provider + GetIt architecture that scales | NO_APPROVAL | stock:pexels |
+| 20250911_212917 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
