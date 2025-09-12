@@ -30,3 +30,4 @@
 | 20250912_001918 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
 | 20250912_022111 | Maps, geocoding, and beautiful location UX | NO_APPROVAL | stock:pexels |
 | 20250912_044459 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
+| 20250912_072610 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
