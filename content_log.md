@@ -33,3 +33,4 @@
 | 20250912_072610 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
 | 20250912_093412 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
 | 20250912_122321 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
+| 20250912_192454 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
