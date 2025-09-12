@@ -34,3 +34,4 @@
 | 20250912_093412 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
 | 20250912_122321 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
 | 20250912_192454 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
+| 20250912_212844 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
