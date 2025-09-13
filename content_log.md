@@ -37,3 +37,4 @@
 | 20250912_212844 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
 | 20250913_021913 | CI/CD hygiene and fearless releases | NO_APPROVAL | stock:pexels |
 | 20250913_044027 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
+| 20250913_082015 | Crash-free user journeys & observability | NO_APPROVAL | stock:pexels |
