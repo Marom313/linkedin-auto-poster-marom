@@ -42,3 +42,4 @@
 | 20250913_141625 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
 | 20250913_162304 | MVVM + Provider + GetIt architecture that scales | NO_APPROVAL | stock:pexels |
 | 20250913_212749 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
+| 20250914_001758 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
