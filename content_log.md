@@ -40,3 +40,4 @@
 | 20250913_082015 | Crash-free user journeys & observability | NO_APPROVAL | stock:pexels |
 | 20250913_112633 | Maps, geocoding, and beautiful location UX | NO_APPROVAL | stock:pexels |
 | 20250913_141625 | Faster APIs with Dio, interceptors, and retries | NO_APPROVAL | stock:pexels |
+| 20250913_162304 | MVVM + Provider + GetIt architecture that scales | NO_APPROVAL | stock:pexels |
