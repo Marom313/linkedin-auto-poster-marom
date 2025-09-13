@@ -36,3 +36,4 @@
 | 20250912_192454 | Polishing performance and frame times | NO_APPROVAL | stock:pexels |
 | 20250912_212844 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
 | 20250913_021913 | CI/CD hygiene and fearless releases | NO_APPROVAL | stock:pexels |
+| 20250913_044027 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
