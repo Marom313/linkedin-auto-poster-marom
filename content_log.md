@@ -46,3 +46,4 @@
 | 20250914_021850 | Building smoother Flutter navigation (GoRouter + Provider) | NO_APPROVAL | stock:pexels |
 | 20250914_045333 | Maps, geocoding, and beautiful location UX | NO_APPROVAL | stock:pexels |
 | 20250914_093113 | Crash-free user journeys & observability | NO_APPROVAL | stock:pexels |
+| 20250914_122023 | Offline-first with Isar/Realm and graceful sync | NO_APPROVAL | stock:pexels |
